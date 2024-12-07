@@ -1,0 +1,76 @@
+name: Deploy to ECS
+
+on:
+  workflow_dispatch
+
+env:
+  AWS_ACCOUNT_ID: 578133268609
+  AWS_ECR: sb-java-ecr-repo-frontend
+  AWS_REGION: us-east-1
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: 'arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/oidc_role'
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to AWS ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build Docker image and tag
+      run: |
+        docker build -t ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java-ecr-repo-frontend/frontend:latest .
+
+    - name: Push Docker image to ECR
+      run: |
+        docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java-ecr-repo-frontend/frontend:latest
+
+    - name: Update ECS Task Definition
+      run: |
+        # Register new ECS task definition
+        NEW_REVISION=$(aws ecs register-task-definition \
+        --family frontend \
+        --container-definitions "$(cat <<EOF
+            [
+                {
+                    "name": "frontend",
+                    "image": "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java-ecr-repo-frontend/frontend:latest",
+                    "memory": "512",
+                    "cpu": "256",
+                    "essential": true,
+                    "portMappings": [
+                        {
+                            "containerPort": 3000,
+                            "hostPort": 80
+                        }
+                    ]
+                }
+            ]
+            EOF
+        )" --query "taskDefinition.taskDefinitionArn" --output text)
+        echo "New revision ARN: $NEW_REVISION"
+
+    - name: Update ECS Service
+      run: |
+        # Update ECS service to use new task definition revision
+        aws ecs update-service \
+        --cluster spring-boot-cluster \
+        --service spring-boot-service \
+        --task-definition "$NEW_REVISION" \
+        --region ${{ env.AWS_REGION }}
