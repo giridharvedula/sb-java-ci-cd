@@ -39,7 +39,6 @@ jobs:
 
       - name: Update ECS Task Definition
         run: |
-          # Register new ECS task definition
           NEW_REVISION=$(aws ecs register-task-definition \
           --family sb-java-frontend-task \
           --container-definitions "$(cat <<'EOF'
@@ -64,9 +63,8 @@ jobs:
 
       - name: Update ECS Service
         run: |
-          # Update ECS service to use new task definition revision
           aws ecs update-service \
-          --cluster ab-java-app-cluster \
-          --service ab-java-frontend-service \
+          --cluster sb-java-app-cluster \
+          --service sb-java-frontend-service \
           --task-definition "$NEW_REVISION" \
           --region ${{ env.AWS_REGION }}
