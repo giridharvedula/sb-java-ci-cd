@@ -42,7 +42,7 @@ jobs:
           # Register new ECS task definition
           NEW_REVISION=$(aws ecs register-task-definition \
           --family sb-java-frontend-task \
-          --container-definitions "$(cat <<EOF
+          --container-definitions "$(cat <<'EOF'
               [
                   {
                       "name": "frontend-container",
@@ -58,7 +58,7 @@ jobs:
                       ]
                   }
               ]
-              EOF
+          EOF
           )" --query "taskDefinition.taskDefinitionArn" --output text)
           echo "New revision ARN: $NEW_REVISION"
 
