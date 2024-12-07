@@ -41,7 +41,7 @@ jobs:
         run: |
           NEW_REVISION=$(aws ecs register-task-definition \
           --family sb-java-frontend-task \
-          --network-mode = awsvpc \
+          --network-mode awsvpc \
           --requires-compatibilities FARGATE \
           --cpu "256" \
           --memory "512" \
