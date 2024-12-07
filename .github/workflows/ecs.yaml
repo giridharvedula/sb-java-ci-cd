@@ -35,11 +35,11 @@ jobs:
 
     - name: Build Docker image and tag
       run: |
-        docker build -t ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java-ecr-repo-frontend/frontend:latest .
+        docker build -t ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java/frontend:latest .
 
     - name: Push Docker image to ECR
       run: |
-        docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java-ecr-repo-frontend/frontend:latest
+        docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java/frontend:latest
 
     - name: Update ECS Task Definition
       run: |
