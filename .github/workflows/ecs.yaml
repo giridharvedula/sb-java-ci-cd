@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 env:
   AWS_ACCOUNT_ID: 578133268609
-  AWS_ECR: sb-java-ecr-repo-frontend
+  AWS_ECR: 578133268609.dkr.ecr.us-east-1.amazonaws.com/sb-java-ecr-repo-frontend
   AWS_REGION: us-east-1
 
 permissions:
@@ -25,37 +25,34 @@ jobs:
           role-to-assume: "arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/oidc_role"
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Log in to AWS ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image and tag
         run: |
-          docker build -t ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java/frontend:latest .
+          docker build -t ${{ env.AWS_ECR }}:latest .
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java/frontend:latest
+          docker push ${{ env.AWS_ECR }}:latest
 
       - name: Update ECS Task Definition
         run: |
           # Register new ECS task definition
           NEW_REVISION=$(aws ecs register-task-definition \
-          --family frontend \
+          --family sb-java-frontend-task \
           --container-definitions "$(cat <<EOF
               [
                   {
-                      "name": "frontend",
-                      "image": "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/sb-java-ecr-repo-frontend/frontend:latest",
+                      "name": "frontend-container",
+                      "image": "${{ env.AWS_ECR }}:latest",
                       "memory": "512",
                       "cpu": "256",
                       "essential": true,
                       "portMappings": [
                           {
-                              "containerPort": 3000,
+                              "containerPort": 80,
                               "hostPort": 80
                           }
                       ]
@@ -69,7 +66,7 @@ jobs:
         run: |
           # Update ECS service to use new task definition revision
           aws ecs update-service \
-          --cluster spring-boot-cluster \
-          --service spring-boot-service \
+          --cluster ab-java-app-cluster \
+          --service ab-java-frontend-service \
           --task-definition "$NEW_REVISION" \
           --region ${{ env.AWS_REGION }}
