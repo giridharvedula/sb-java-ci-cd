@@ -38,6 +38,7 @@ jobs:
           docker push ${{ env.AWS_ECR }}:latest
 
       - name: Update ECS Task Definition
+        id: ecs-task-def
         run: |
           NEW_REVISION=$(aws ecs register-task-definition \
           --family sb-java-frontend-task \
@@ -71,7 +72,5 @@ jobs:
           aws ecs update-service \
           --cluster sb-java-app-cluster \
           --service sb-java-frontend-service \
-          --task-definition "$NEW_REVISION" \
-          --launch-type FARGATE \
-          --network-configuration "awsvpcConfiguration={subnets=[subnet-07ed904bb16c928e2, subnet-0dcc6991c6b4cda3c],securityGroups=[sg-05874051e3dc7d42d]}"
+          --task-definition ${{ steps.ecs-task-def.outputs.echo.ARN }}
           --region ${{ env.AWS_REGION }}
