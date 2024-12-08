@@ -66,11 +66,12 @@ jobs:
           EOF
           )" --query "taskDefinition.taskDefinitionArn" --output text)
           echo "New revision ARN: $NEW_REVISION"
+          echo "::set-output name=task_definition_arn::$NEW_REVISION" 
 
       - name: Update ECS Service
         run: |
           aws ecs update-service \
           --cluster sb-java-app-cluster \
           --service sb-java-frontend-service \
-          --task-definition ${{ steps.ecs-task-def.outputs.echo.ARN }}
+          --task-definition ${{ steps.ecs-task-def.outputs.task_definition_arn }} \
           --region ${{ env.AWS_REGION }}
