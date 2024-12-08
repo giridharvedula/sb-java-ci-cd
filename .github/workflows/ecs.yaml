@@ -43,6 +43,7 @@ jobs:
           --family sb-java-frontend-task \
           --network-mode awsvpc \
           --requires-compatibilities FARGATE \
+          --execution-role-arn arn:aws:iam::578133268609:role/ecs-task-execution-role \
           --cpu "256" \
           --memory "512" \
           --container-definitions "$(cat <<'EOF'
